@@ -332,6 +332,23 @@
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.7.9</version>
                 </plugin>
+                <plugin>
+                    <groupId>external.atlassian.jgitflow</groupId>
+                    <artifactId>jgitflow-maven-plugin</artifactId>
+                    <version>1.0-m5.1</version>
+                    <configuration>
+                        <flowInitContext>
+                            <masterBranchName>frankenstein</masterBranchName>
+                            <developBranchName>development</developBranchName>
+                            <featureBranchPrefix>feature-</featureBranchPrefix>
+                            <releaseBranchPrefix>release-</releaseBranchPrefix>
+                            <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
+                            <versionTagPrefix>blither-</versionTagPrefix>
+                        </flowInitContext>
+                        <username>MY_USER</username>
+                        <password>MY_PW</password>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
