@@ -1,5 +1,8 @@
 package org.swisspush.gateleen.playground;
 
+import ch.bfh.ti.gapa.integration.server.converter.GapaMessageToJsonConverter;
+import ch.bfh.ti.gapa.integration.server.converter.JsonSender;
+import java.util.concurrent.atomic.AtomicReference;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -109,6 +112,8 @@ public class Server extends AbstractVerticle {
 
     private Logger log = LoggerFactory.getLogger(Server.class);
 
+    private AtomicReference<GapaMessageToJsonConverter> gapaMessageToJsonConverterAtomicReference = new AtomicReference<>();
+
     public static void main(String[] args) {
         Vertx.vertx().deployVerticle("org.swisspush.gateleen.playground.Server", event ->
             LoggerFactory.getLogger(Server.class).info("[_] Gateleen - http://localhost:7012/gateleen/")
@@ -117,6 +122,7 @@ public class Server extends AbstractVerticle {
 
     @Override
     public void start() {
+        Router.gapaMessageToJsonConverterAtomicReference = gapaMessageToJsonConverterAtomicReference;
         final LocalHttpClient selfClient = new LocalHttpClient(vertx);
         final JsonObject info = new JsonObject();
         final Map<String, Object> props = RunConfig.buildRedisProps("localhost", defaultRedisPort);
@@ -250,6 +256,10 @@ public class Server extends AbstractVerticle {
                 options.setHandle100ContinueAutomatically(true);
 
                 mainServer = vertx.createHttpServer(options);
+                mainServer.websocketHandler(serverWebSocket -> {
+                    JsonSender jsonSender = jsonObject -> serverWebSocket.writeFinalTextFrame(jsonObject.toString());
+                    gapaMessageToJsonConverterAtomicReference.set(new GapaMessageToJsonConverter(jsonSender));
+                });
                 io.vertx.ext.web.Router vertxRouter = io.vertx.ext.web.Router.router(vertx);
                 eventBusHandler.install(vertxRouter);
                 vertxRouter.route().handler(routingContextHandlerrNew);

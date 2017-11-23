@@ -1,5 +1,6 @@
 package org.swisspush.gateleen.routing;
 
+import ch.bfh.ti.gapa.integration.server.converter.GapaMessageToJsonConverter;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -28,6 +29,7 @@ import org.swisspush.gateleen.validation.ValidationException;
 
 import java.net.HttpCookie;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.swisspush.gateleen.core.util.HttpServerRequestUtil.increaseRequestHops;
 import static org.swisspush.gateleen.core.util.HttpServerRequestUtil.isRequestHopsLimitExceeded;
@@ -68,6 +70,8 @@ public class Router implements Refreshable, LoggableResource, ConfigurationResou
     private String configResourceUri;
     private ConfigurationResourceManager configurationResourceManager;
     private Integer requestHopsLimit = null;
+
+    public static AtomicReference<GapaMessageToJsonConverter> gapaMessageToJsonConverterAtomicReference = new AtomicReference<>();
 
     public Router(Vertx vertx,
                   LocalMap<String, Object> sharedData,

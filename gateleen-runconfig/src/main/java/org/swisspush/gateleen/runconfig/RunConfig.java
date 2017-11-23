@@ -1,5 +1,6 @@
 package org.swisspush.gateleen.runconfig;
 
+import ch.bfh.ti.gapa.integration.model.GapaMessage;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -12,6 +13,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Instant;
 import org.joda.time.format.ISODateTimeFormat;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Log4jConfigurer;
@@ -496,7 +498,20 @@ public class RunConfig {
                 }
                 request.exceptionHandler(exception -> LoggerFactory.getLogger(verticleClass).trace("Exception in client", exception));
                 logRequest(request);
-
+                if(request.headers().contains("x-service")) {
+                    //ignore requests without service name header
+                    GapaMessage gapaMessage = new GapaMessage();
+                    gapaMessage.setMethod(GapaMessage.Method.valueOf(request.method().name()));
+                    gapaMessage.setPeer(request.getHeader("x-service"));
+                    gapaMessage.setType(GapaMessage.Type.inbound);
+                    gapaMessage.setPath(request.path());
+                    gapaMessage.setTimestamp(java.time.Instant.now());
+                    try {
+                        router.gapaMessageToJsonConverterAtomicReference.get().sendGapaMessage(gapaMessage);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
                 if (qosHandler != null && qosHandler.handle(request)) {
                     return;
                 }

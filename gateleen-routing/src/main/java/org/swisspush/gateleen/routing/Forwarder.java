@@ -1,5 +1,6 @@
 package org.swisspush.gateleen.routing;
 
+import ch.bfh.ti.gapa.integration.model.GapaMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -8,6 +9,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.swisspush.gateleen.core.http.RequestLoggerFactory;
 import org.swisspush.gateleen.core.storage.ResourceStorage;
@@ -157,6 +159,22 @@ public class Forwarder implements Handler<RoutingContext> {
         final long startTime = monitoringHandler.startRequestMetricTracking(rule.getMetricName(), req.uri());
 
         final HttpClientRequest cReq = prepareRequest(req, targetUri, log, profileHeaderMap, loggingHandler, startTime);
+
+        if(targetUri.startsWith("http")) {
+            //ignore routes onto itself
+            GapaMessage gapaMessage = new GapaMessage();
+            gapaMessage.setMethod(GapaMessage.Method.valueOf(cReq.method().name()));
+            gapaMessage.setPeer(cReq.getHost());
+            gapaMessage.setType(GapaMessage.Type.outbound);
+            gapaMessage.setPath(cReq.path());
+            gapaMessage.setTimestamp(java.time.Instant.now());
+            gapaMessage.setTraceId(uniqueId);
+            try {
+                Router.gapaMessageToJsonConverterAtomicReference.get().sendGapaMessage(gapaMessage);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
 
         if (timeout != null) {
             cReq.setTimeout(Long.valueOf(timeout));
