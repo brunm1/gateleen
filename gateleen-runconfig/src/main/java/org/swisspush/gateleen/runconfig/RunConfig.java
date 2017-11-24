@@ -508,8 +508,8 @@ public class RunConfig {
                     gapaMessage.setTimestamp(java.time.Instant.now());
                     try {
                         router.gapaMessageToJsonConverterAtomicReference.get().sendGapaMessage(gapaMessage);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } catch (JSONException | NullPointerException e) {
+//                        e.printStackTrace();
                     }
                 }
                 if (qosHandler != null && qosHandler.handle(request)) {

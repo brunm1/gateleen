@@ -160,22 +160,6 @@ public class Forwarder implements Handler<RoutingContext> {
 
         final HttpClientRequest cReq = prepareRequest(req, targetUri, log, profileHeaderMap, loggingHandler, startTime);
 
-        if(targetUri.startsWith("http")) {
-            //ignore routes onto itself
-            GapaMessage gapaMessage = new GapaMessage();
-            gapaMessage.setMethod(GapaMessage.Method.valueOf(cReq.method().name()));
-            gapaMessage.setPeer(cReq.getHost());
-            gapaMessage.setType(GapaMessage.Type.outbound);
-            gapaMessage.setPath(cReq.path());
-            gapaMessage.setTimestamp(java.time.Instant.now());
-            gapaMessage.setTraceId(uniqueId);
-            try {
-                Router.gapaMessageToJsonConverterAtomicReference.get().sendGapaMessage(gapaMessage);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
         if (timeout != null) {
             cReq.setTimeout(Long.valueOf(timeout));
         } else {
@@ -190,6 +174,22 @@ public class Forwarder implements Handler<RoutingContext> {
 
         if (!ResponseStatusCodeLogUtil.isRequestToExternalTarget(target)) {
             cReq.headers().set(SELF_REQUEST_HEADER, "true");
+        }
+
+        if(!target.contains("localhost:7012")) {
+            //ignore routes onto itself
+            GapaMessage gapaMessage = new GapaMessage();
+            gapaMessage.setMethod(GapaMessage.Method.valueOf(cReq.method().name()));
+            gapaMessage.setPeer(target);
+            gapaMessage.setType(GapaMessage.Type.outbound);
+            gapaMessage.setPath(cReq.path());
+            gapaMessage.setTimestamp(java.time.Instant.now());
+            gapaMessage.setTraceId(uniqueId);
+            try {
+                Router.gapaMessageToJsonConverterAtomicReference.get().sendGapaMessage(gapaMessage);
+            } catch (JSONException | NullPointerException e) {
+//                e.printStackTrace();
+            }
         }
 
         if (uniqueId != null) {
